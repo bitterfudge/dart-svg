@@ -30,36 +30,20 @@ class SvgParserDefinition extends SvgGrammarDefinition {
   moveTo() => super.moveTo().map((List result) {
     var isRelative = result[0] == 'm';
 
-    // Single move.
-    if (result[2] is Point) {
-      Point point = result[2];
-      return [new SvgPathMoveSegment(point.x, point.y, isRelative: isRelative)];
-    }
-
-    // Multiple move.
-    if (result[2] is Iterable) {
-      return (result[2] as Iterable).where((e) => e is Point).map((Point p) {
-        return new SvgPathMoveSegment(p.x, p.y, isRelative: isRelative);
-      });
-    }
+    return _argsParser(result[2], 1).map((List args) {
+      Point point = args[0];
+      return new SvgPathMoveSegment(point.x, point.y, isRelative: isRelative);
+    });
   });
 
   @override
   lineTo() => super.lineTo().map((List result) {
     var isRelative = result[0] == 'l';
 
-    // Single line.
-    if (result[2] is Point) {
-      Point point = result[2];
-      return [new SvgPathLineSegment(point.x, point.y, isRelative: isRelative)];
-    }
-
-    // Multiple lines.
-    if (result[2] is Iterable) {
-      return (result[2] as Iterable).where((e) => e is Point).map((Point p) {
-        return new SvgPathLineSegment(p.x, p.y, isRelative: isRelative);
-      }).toList(growable: false);
-    }
+    return _argsParser(result[2], 1).map((List args) {
+      Point point = args[0];
+      return new SvgPathLineSegment(point.x, point.y, isRelative: isRelative);
+    });
   });
 
   @override
@@ -91,5 +75,25 @@ class SvgParserDefinition extends SvgGrammarDefinition {
   @override
   fractionalConstant() {
     return super.fractionalConstant().flatten().map(double.parse);
+  }
+
+  List _argsParser(seq, num argCount) {
+    Iterable it = seq is Iterable ? seq : [seq];
+
+    var arr = [];
+
+    while (it != null) {
+      arr.add(it.take(argCount).toList(growable: false));
+
+      var next = it.skip(argCount + 1);
+      if (next.isEmpty) {
+        it = null;
+      } else {
+        var seq = next.single;
+        it = seq is Iterable ? seq : [seq];
+      }
+    }
+
+    return arr;
   }
 }
